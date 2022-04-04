@@ -1,0 +1,98 @@
+== 安装VirtualBox
+
+更新系统：
+
+```sh
+$ sudo dnf -y upgrade
+$ sudo reboot
+```
+
+安装依赖:
+
+```sh
+sudo dnf -y install @development-tools
+sudo dnf -y install kernel-headers kernel-devel dkms elfutils-libelf-devel qt5-qtx11extras
+```
+
+添加VirtualBox RPM 仓库：
+
+Fedora 35:
+
+```sh
+cat <<EOF | sudo tee /etc/yum.repos.d/virtualbox.repo 
+[virtualbox]
+name=Fedora $releasever - $basearch - VirtualBox
+baseurl=http://download.virtualbox.org/virtualbox/rpm/fedora/35/\$basearch
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://www.virtualbox.org/download/oracle_vbox.asc
+EOF
+```
+
+导入 VirtualBox GPG Key:
+
+```sh
+$ sudo dnf search virtualbox
+Fedora  -  - VirtualBox                                                                                                            58  B/s | 181  B     00:03
+Fedora  -  - VirtualBox                                                                                                           906  B/s | 1.7 kB     00:01
+Importing GPG key 0x98AB5139:
+ Userid     : "Oracle Corporation (VirtualBox archive signing key) <info@virtualbox.org>"
+ Fingerprint: 7B0F AB3A 13B9 0743 5925 D9C9 5442 2A4B 98AB 5139
+ From       : https://www.virtualbox.org/download/oracle_vbox.asc
+Is this ok [y/N]: y
+```
+
+安装VirtualBox 6：
+
+```sh
+sudo dnf install VirtualBox-6.1
+```
+
+添加用户到vboxusers用户组:
+
+```sh
+$ sudo usermod -a -G vboxusers $USER
+$ newgrp vboxusers
+$ id $USER
+uid=1000(maojun) gid=1000(maojun) groups=1000(maojun),10(wheel),977(vboxusers)
+```
+
+
+== 安装Vagrant
+Feroda:
+
+```
+sudo dnf install vagrant
+```
+
+
+== 同步
+vagrant默认提供了Rsyncing folder, 这种同步方式在大多数情况下都能提供便利，不过也有不足之处:
+
+* 同步是一次性的，即只有启动虚拟机的时候执行，也就是说改了代码必须要重启一次虚机
+* 单向的，即只能从宿主机同步到虚拟机，也就是说在虚机内的改动不会同步到外面(也就是虚拟机中的这个文件夹在下次重新启动之后会被覆盖掉)
+* 需要拷贝文件，如果要同步的文件数量较多，会占用更多的磁盘空间
+
+== 问题
+
+* 通过vagrant up 启动虚拟机提示：mount: unknown filesystem type 'vboxsf'
+
+** 没有安装vbox插件
+
+```
+vagrant plugin install vagrant-vbguest
+```
+
+* umount: /mnt: not mounted
+
+** 卸载掉原来的vagrant-vbguest 插件 ，原来的插件是0.30版本有问题，更换低版本插件
+
+```sh
+#安装兼容的插件版本 
+vagrant plugin install vagrant-vbguest --plugin-version 0.21
+#销毁原来的镜像
+vagrant destroy -f
+#启动虚拟机
+vagrant up --color
+```
